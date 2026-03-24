@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  role         String   @map("role") // student, lecturer, kiosk
+  identifier   String   @map("identifier")
+  name         String   @map("name")
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@unique([role, identifier])
+  @@map("users")
+}
+
+model Session {
+  id               String   @id @default(uuid())
+  courseCode       String   @map("course_code")
+  courseTitle      String   @map("course_title")
+  room             String
+  startTime        String   @map("start_time")
+  endTime          String   @map("end_time")
+  expectedCount    Int      @default(0) @map("expected_count")
+  faceRequired     Boolean  @default(false) @map("face_required")
+  qrRotationSeconds Int     @default(10) @map("qr_rotation_seconds")
+  status           String   @default("live") // live, ended
+  checkedIn        Int      @default(0) @map("checked_in")
+  fallbackCount    Int      @default(0) @map("fallback_count")
+  createdAt        DateTime @default(now()) @map("created_at")
+  endedAt          DateTime? @map("ended_at")
+
+  qrTokens     QrToken[]
+  attendance  Attendance[]
+
+  @@map("sessions")
+}
+
+model QrToken {
+  id        String   @id @default(uuid())
+  sessionId String   @map("session_id")
+  token     String
+  expiresAt BigInt   @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("qr_tokens")
+}
+
+model Attendance {
+  id         String   @id @default(uuid())
+  sessionId  String   @map("session_id")
+  studentId  String   @map("student_id")
+  method     String   @default("qr") // qr, kiosk
+  status     String   @default("Present") // Present, Absent, Late
+  operatorId String?  @map("operator_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+  @@map("attendance")
+}
+
+model FaceProfile {
+  id          String   @id @default(uuid())
+  studentId   String   @unique @map("student_id")
+  imageBase64 String   @map("image_base64")
+  provider    String   @default("mock")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("face_profiles")
+}
+
+model FaceVerification {
+  id          String   @id @default(uuid())
+  studentId   String   @map("student_id")
+  similarity  Float?
+  provider    String?
+  challenge   String?
+  liveness    Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  expiresAt   BigInt   @map("expires_at")
+
+  @@map("face_verifications")
+}

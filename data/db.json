@@ -1,0 +1,115 @@
+{
+  "users": [
+    {
+      "id": "user_lecturer_001",
+      "role": "lecturer",
+      "identifier": "TASUED-LEC-204",
+      "name": "Dr. Adeniyi Ogunwale",
+      "passwordHash": "$2a$10$8K1p/a0dL3.iV0V8fYzJ3.C qwertyuiopasdfghjklzxcvbnm",
+      "createdAt": "2024-01-15T08:00:00.000Z"
+    },
+    {
+      "id": "user_student_001",
+      "role": "student",
+      "identifier": "TAS/EDU/21/1045",
+      "name": "Amina Owolabi",
+      "passwordHash": "$2a$10$8K1p/a0dL3.iV0V8fYzJ3.C qwertyuiopasdfghjklzxcvbnm",
+      "createdAt": "2024-01-15T08:00:00.000Z"
+    },
+    {
+      "id": "user_student_002",
+      "role": "student",
+      "identifier": "TAS/EDU/21/1089",
+      "name": "Idris Olumide",
+      "passwordHash": "$2a$10$8K1p/a0dL3.iV0V8fYzJ3.C qwertyuiopasdfghjklzxcvbnm",
+      "createdAt": "2024-01-15T08:00:00.000Z"
+    },
+    {
+      "id": "user_student_003",
+      "role": "student",
+      "identifier": "TAS/EDU/21/1123",
+      "name": "Zainab Hassan",
+      "passwordHash": "$2a$10$8K1p/a0dL3.iV0V8fYzJ3.C qwertyuiopasdfghjklzxcvbnm",
+      "createdAt": "2024-01-15T08:00:00.000Z"
+    },
+    {
+      "id": "user_kiosk_001",
+      "role": "kiosk",
+      "identifier": "KIOSK-001",
+      "name": "Front Desk Kiosk",
+      "passwordHash": "$2a$10$8K1p/a0dL3.iV0V8fYzJ3.C qwertyuiopasdfghjklzxcvbnm",
+      "createdAt": "2024-01-15T08:00:00.000Z"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "session_001",
+      "courseCode": "EDU 401",
+      "courseTitle": "Curriculum & Instruction",
+      "room": "TETFund Hall",
+      "startTime": "11:00 AM",
+      "endTime": "1:00 PM",
+      "expectedCount": 500,
+      "faceRequired": true,
+      "qrRotationSeconds": 10,
+      "status": "live",
+      "checkedIn": 126,
+      "fallbackCount": 8,
+      "createdAt": "2024-03-16T10:55:00.000Z"
+    },
+    {
+      "id": "session_002",
+      "courseCode": "EDU 305",
+      "courseTitle": "Educational Psychology",
+      "room": "Lecture Hall B",
+      "startTime": "2:00 PM",
+      "endTime": "4:00 PM",
+      "expectedCount": 350,
+      "faceRequired": false,
+      "qrRotationSeconds": 15,
+      "status": "ended",
+      "checkedIn": 312,
+      "fallbackCount": 15,
+      "createdAt": "2024-03-15T13:50:00.000Z",
+      "endedAt": "2024-03-15T16:05:00.000Z"
+    }
+  ],
+  "qrTokens": [],
+  "attendance": [
+    {
+      "id": "attendance_001",
+      "sessionId": "session_001",
+      "studentId": "TAS/EDU/21/1045",
+      "method": "qr",
+      "status": "Present",
+      "createdAt": "2024-03-16T11:02:34.000Z"
+    },
+    {
+      "id": "attendance_002",
+      "sessionId": "session_001",
+      "studentId": "TAS/EDU/21/1089",
+      "method": "qr",
+      "status": "Present",
+      "createdAt": "2024-03-16T11:03:12.000Z"
+    },
+    {
+      "id": "attendance_003",
+      "sessionId": "session_001",
+      "studentId": "TAS/EDU/21/1123",
+      "method": "kiosk",
+      "status": "Present",
+      "operatorId": "user_kiosk_001",
+      "createdAt": "2024-03-16T11:15:00.000Z"
+    },
+    {
+      "id": "attendance_004",
+      "sessionId": "session_002",
+      "studentId": "TAS/EDU/21/1045",
+      "method": "qr",
+      "status": "Present",
+      "createdAt": "2024-03-15T14:05:22.000Z"
+    }
+  ],
+  "faceProfiles": [],
+  "faceVerifications": []
+}
