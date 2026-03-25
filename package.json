@@ -6,19 +6,22 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
+    "build": "npx prisma generate",
     "setup": "chmod +x setup-db.sh && ./setup-db.sh",
     "db:generate": "npx prisma generate",
     "db:push": "npx prisma db push",
     "db:migrate": "npx prisma migrate deploy",
     "test": "node test-server.js",
-    "postinstall": "npx prisma generate"
+    "postinstall": "npx prisma generate",
+    "render-build": "npm install && npx prisma generate"
   },
   "keywords": ["attendance", "education", "api", "nodejs", "prisma", "postgresql"],
   "author": "TASUED Development Team",
   "license": "ISC",
   "type": "commonjs",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   },
   "dependencies": {
     "@aws-sdk/client-rekognition": "^3.1006.0",

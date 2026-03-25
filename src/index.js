@@ -13,9 +13,21 @@ const db = require('./models');
 
 const app = express();
 
-app.use(cors());
+// Production-ready CORS configuration
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://attendx.vercel.app', 'https://attendx-web.netlify.app'] // Add your web app domains
+    : true, // Allow all origins in development
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
-app.use(morgan('dev'));
+
+// Use appropriate logging for environment
+const logFormat = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
+app.use(morgan(logFormat));
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -209,6 +221,16 @@ app.get('/health', async (req, res) => {
   } catch (err) {
     res.json({ status: 'ok', time: nowIso(), database: 'disconnected' });
   }
+});
+
+// Keep-alive endpoint to prevent Render from sleeping
+app.get('/ping', (req, res) => {
+  res.json({ 
+    status: 'alive', 
+    time: nowIso(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage()
+  });
 });
 
 app.post('/auth/register', async (req, res) => {

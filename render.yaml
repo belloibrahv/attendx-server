@@ -2,6 +2,7 @@ services:
   - type: web
     name: attendx-api
     env: node
+    plan: free
     buildCommand: npm install && npx prisma generate
     startCommand: npm start
     healthCheckPath: /health
@@ -9,10 +10,16 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
-        generateValue: true
+        value: attendx_super_secure_jwt_secret_2024_tasued
       - key: NODE_ENV
         value: production
       - key: AUTO_REGISTER
         value: true
       - key: FACE_PROVIDER
         value: mock
+      - key: FACE_MATCH_THRESHOLD
+        value: 90
+      - key: FACE_VERIFY_TTL
+        value: 300
+      - key: LIVENESS_ENABLED
+        value: false
