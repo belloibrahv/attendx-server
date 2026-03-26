@@ -72,14 +72,16 @@ const corsOptions = {
       return callback(null, true);
     }
     
-    const allowedOrigins = process.env.NODE_ENV === 'production' 
-      ? [
-          'https://attendx.vercel.app', 
-          'https://attendx-web.vercel.app',
-          'https://attendx-web.netlify.app',
-          'https://attendx-web.onrender.com'
-        ]
-      : ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000'];
+    const allowedOrigins = [
+      'https://attendx.vercel.app', 
+      'https://attendx-web.vercel.app',
+      'https://attendx-web.netlify.app',
+      'https://attendx-web.onrender.com',
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5173'
+    ];
     
     console.log(`CORS: Allowed origins:`, allowedOrigins);
     
@@ -90,14 +92,12 @@ const corsOptions = {
     }
     
     // Check regex patterns for production
-    if (process.env.NODE_ENV === 'production') {
-      const vercelPattern = /^https:\/\/.*\.vercel\.app$/;
-      const netlifyPattern = /^https:\/\/.*\.netlify\.app$/;
-      
-      if (vercelPattern.test(origin) || netlifyPattern.test(origin)) {
-        console.log(`CORS: Allowing origin (pattern match): ${origin}`);
-        return callback(null, true);
-      }
+    const vercelPattern = /^https:\/\/.*\.vercel\.app$/;
+    const netlifyPattern = /^https:\/\/.*\.netlify\.app$/;
+    
+    if (vercelPattern.test(origin) || netlifyPattern.test(origin)) {
+      console.log(`CORS: Allowing origin (pattern match): ${origin}`);
+      return callback(null, true);
     }
     
     console.log(`CORS: Blocked origin: ${origin}`);
@@ -117,11 +117,19 @@ app.options('*', (req, res) => {
   const origin = req.headers.origin;
   console.log(`OPTIONS request from origin: ${origin}`);
   
+  const allowedOrigins = [
+    'https://attendx-web.vercel.app',
+    'https://attendx.vercel.app',
+    'https://attendx-web.netlify.app',
+    'https://attendx-web.onrender.com',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173'
+  ];
+  
   if (origin && (
-    origin === 'https://attendx-web.vercel.app' ||
-    origin === 'https://attendx.vercel.app' ||
-    origin === 'https://attendx-web.netlify.app' ||
-    origin === 'https://attendx-web.onrender.com' ||
+    allowedOrigins.includes(origin) ||
     /^https:\/\/.*\.vercel\.app$/.test(origin) ||
     /^https:\/\/.*\.netlify\.app$/.test(origin)
   )) {
