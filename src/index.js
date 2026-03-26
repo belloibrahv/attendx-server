@@ -64,8 +64,13 @@ const attendanceLimiter = createRateLimit(60 * 1000, 50, 'Too many attendance su
 // Production-ready CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
+    console.log(`CORS: Checking origin: ${origin}`);
+    
     // Allow requests with no origin (like mobile apps or Postman)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('CORS: Allowing request with no origin');
+      return callback(null, true);
+    }
     
     const allowedOrigins = process.env.NODE_ENV === 'production' 
       ? [
@@ -76,8 +81,11 @@ const corsOptions = {
         ]
       : ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000'];
     
+    console.log(`CORS: Allowed origins:`, allowedOrigins);
+    
     // Check exact matches first
     if (allowedOrigins.includes(origin)) {
+      console.log(`CORS: Allowing origin (exact match): ${origin}`);
       return callback(null, true);
     }
     
@@ -87,6 +95,7 @@ const corsOptions = {
       const netlifyPattern = /^https:\/\/.*\.netlify\.app$/;
       
       if (vercelPattern.test(origin) || netlifyPattern.test(origin)) {
+        console.log(`CORS: Allowing origin (pattern match): ${origin}`);
         return callback(null, true);
       }
     }
@@ -96,7 +105,9 @@ const corsOptions = {
   },
   credentials: true,
   optionsSuccessStatus: 200,
-  maxAge: 86400 // 24 hours
+  maxAge: 86400, // 24 hours
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 };
 
 app.use(cors(corsOptions));
@@ -371,6 +382,15 @@ app.get('/health', async (req, res) => {
   } catch (err) {
     res.json({ status: 'ok', time: nowIso(), database: 'disconnected' });
   }
+});
+
+// CORS test endpoint
+app.get('/cors-test', (req, res) => {
+  res.json({ 
+    message: 'CORS test successful',
+    origin: req.headers.origin,
+    time: nowIso()
+  });
 });
 
 // Keep-alive endpoint to prevent Render from sleeping
