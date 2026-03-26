@@ -63,46 +63,18 @@ const attendanceLimiter = createRateLimit(60 * 1000, 50, 'Too many attendance su
 
 // Production-ready CORS configuration
 const corsOptions = {
-  origin: function (origin, callback) {
-    console.log(`CORS: Checking origin: ${origin}`);
-    
-    // Allow requests with no origin (like mobile apps or Postman)
-    if (!origin) {
-      console.log('CORS: Allowing request with no origin');
-      return callback(null, true);
-    }
-    
-    const allowedOrigins = [
-      'https://attendx.vercel.app', 
-      'https://attendx-web.vercel.app',
-      'https://attendx-web.netlify.app',
-      'https://attendx-web.onrender.com',
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:5173'
-    ];
-    
-    console.log(`CORS: Allowed origins:`, allowedOrigins);
-    
-    // Check exact matches first
-    if (allowedOrigins.includes(origin)) {
-      console.log(`CORS: Allowing origin (exact match): ${origin}`);
-      return callback(null, true);
-    }
-    
-    // Check regex patterns for production
-    const vercelPattern = /^https:\/\/.*\.vercel\.app$/;
-    const netlifyPattern = /^https:\/\/.*\.netlify\.app$/;
-    
-    if (vercelPattern.test(origin) || netlifyPattern.test(origin)) {
-      console.log(`CORS: Allowing origin (pattern match): ${origin}`);
-      return callback(null, true);
-    }
-    
-    console.log(`CORS: Blocked origin: ${origin}`);
-    callback(new Error('Not allowed by CORS'));
-  },
+  origin: [
+    'https://attendx.vercel.app', 
+    'https://attendx-web.vercel.app',
+    'https://attendx-web.netlify.app',
+    'https://attendx-web.onrender.com',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
+    /^https:\/\/.*\.vercel\.app$/,
+    /^https:\/\/.*\.netlify\.app$/
+  ],
   credentials: true,
   optionsSuccessStatus: 200,
   maxAge: 86400, // 24 hours
@@ -111,40 +83,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-// Explicit OPTIONS handler for preflight requests
-app.options('*', (req, res) => {
-  const origin = req.headers.origin;
-  console.log(`OPTIONS request from origin: ${origin}`);
-  
-  const allowedOrigins = [
-    'https://attendx-web.vercel.app',
-    'https://attendx.vercel.app',
-    'https://attendx-web.netlify.app',
-    'https://attendx-web.onrender.com',
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:5173'
-  ];
-  
-  if (origin && (
-    allowedOrigins.includes(origin) ||
-    /^https:\/\/.*\.vercel\.app$/.test(origin) ||
-    /^https:\/\/.*\.netlify\.app$/.test(origin)
-  )) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin');
-    res.header('Access-Control-Max-Age', '86400');
-    console.log(`OPTIONS: Allowing origin ${origin}`);
-  } else {
-    console.log(`OPTIONS: Blocking origin ${origin}`);
-  }
-  
-  res.sendStatus(200);
-});
 
 // Enhanced body parsing with limits
 app.use(express.json({ 
