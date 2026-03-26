@@ -3,6 +3,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const compression = require('compression');
 const { z } = require('zod');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -13,30 +16,109 @@ const db = require('./models');
 
 const app = express();
 
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
+
+// Compression middleware
+app.use(compression({
+  level: 6,
+  threshold: 1024,
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) return false;
+    return compression.filter(req, res);
+  }
+}));
+
+// Rate limiting configuration
+const createRateLimit = (windowMs, max, message) => rateLimit({
+  windowMs,
+  max,
+  message: { error: message },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({ 
+      error: message,
+      retryAfter: Math.ceil(windowMs / 1000)
+    });
+  }
+});
+
+// Global rate limiting
+app.use(createRateLimit(15 * 60 * 1000, 1000, 'Too many requests, please try again later'));
+
+// Auth endpoints rate limiting
+const authLimiter = createRateLimit(15 * 60 * 1000, 10, 'Too many authentication attempts');
+const qrLimiter = createRateLimit(60 * 1000, 100, 'Too many QR requests');
+const attendanceLimiter = createRateLimit(60 * 1000, 50, 'Too many attendance submissions');
+
 // Production-ready CORS configuration
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://attendx.vercel.app', 'https://attendx-web.netlify.app'] // Add your web app domains
-    : true, // Allow all origins in development
+    ? [
+        'https://attendx.vercel.app', 
+        'https://attendx-web.netlify.app',
+        'https://attendx-web.onrender.com',
+        /^https:\/\/.*\.vercel\.app$/,
+        /^https:\/\/.*\.netlify\.app$/
+      ]
+    : true,
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  maxAge: 86400 // 24 hours
 };
 
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '10mb' }));
 
-// Use appropriate logging for environment
-const logFormat = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
-app.use(morgan(logFormat));
+// Enhanced body parsing with limits
+app.use(express.json({ 
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+// Enhanced logging
+const logFormat = process.env.NODE_ENV === 'production' 
+  ? 'combined' 
+  : 'dev';
+
+app.use(morgan(logFormat, {
+  skip: (req, res) => {
+    // Skip health check logs in production
+    return process.env.NODE_ENV === 'production' && req.url === '/health';
+  }
+}));
+
+// Environment variables with validation
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET must be set in production');
+  }
+  return 'dev_secret';
+})();
+
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h'; // Reduced from 7d for security
+const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 const AUTO_REGISTER = process.env.AUTO_REGISTER !== 'false';
 const FACE_PROVIDER = process.env.FACE_PROVIDER || 'mock';
 const FACE_MATCH_THRESHOLD = Number(process.env.FACE_MATCH_THRESHOLD || 90);
 const FACE_VERIFY_TTL = Number(process.env.FACE_VERIFY_TTL || 300);
 const LIVENESS_ENABLED = process.env.LIVENESS_ENABLED === 'true';
+const MAX_CONCURRENT_SESSIONS = Number(process.env.MAX_CONCURRENT_SESSIONS || 10);
+const QR_TOKEN_CACHE_TTL = Number(process.env.QR_TOKEN_CACHE_TTL || 30);
 
+// AWS Configuration validation
 const awsConfigured =
   FACE_PROVIDER === 'aws' &&
   process.env.AWS_REGION &&
@@ -48,6 +130,52 @@ const faceProvider = awsConfigured ? 'aws' : 'mock';
 if (FACE_PROVIDER === 'aws' && !awsConfigured) {
   console.warn('FACE_PROVIDER set to aws, but AWS credentials are missing. Falling back to mock.');
 }
+
+// In-memory cache for high-frequency data (replace with Redis in production)
+const cache = new Map();
+const CACHE_TTL = {
+  QR_TOKEN: 30 * 1000,      // 30 seconds
+  SESSION: 60 * 1000,       // 1 minute
+  USER: 300 * 1000,         // 5 minutes
+  ATTENDANCE: 30 * 1000     // 30 seconds
+};
+
+function setCache(key, value, ttl = 60000) {
+  cache.set(key, {
+    value,
+    expires: Date.now() + ttl
+  });
+}
+
+function getCache(key) {
+  const item = cache.get(key);
+  if (!item) return null;
+  
+  if (Date.now() > item.expires) {
+    cache.delete(key);
+    return null;
+  }
+  
+  return item.value;
+}
+
+function clearCache(pattern) {
+  for (const key of cache.keys()) {
+    if (key.includes(pattern)) {
+      cache.delete(key);
+    }
+  }
+}
+
+// Cache cleanup interval
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, item] of cache.entries()) {
+    if (now > item.expires) {
+      cache.delete(key);
+    }
+  }
+}, 60000); // Clean every minute
 
 const rekognitionClient = awsConfigured
   ? new RekognitionClient({

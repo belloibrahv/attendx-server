@@ -15,6 +15,9 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@unique([role, identifier])
+  @@index([role])
+  @@index([identifier])
+  @@index([createdAt])
   @@map("users")
 }
 
@@ -37,6 +40,10 @@ model Session {
   qrTokens     QrToken[]
   attendance  Attendance[]
 
+  @@index([status])
+  @@index([courseCode])
+  @@index([createdAt])
+  @@index([status, createdAt])
   @@map("sessions")
 }
 
@@ -49,6 +56,10 @@ model QrToken {
 
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
+  @@index([sessionId])
+  @@index([token])
+  @@index([expiresAt])
+  @@index([sessionId, expiresAt])
   @@map("qr_tokens")
 }
 
@@ -64,6 +75,13 @@ model Attendance {
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@unique([sessionId, studentId])
+  @@index([sessionId])
+  @@index([studentId])
+  @@index([method])
+  @@index([status])
+  @@index([createdAt])
+  @@index([sessionId, createdAt])
+  @@index([studentId, createdAt])
   @@map("attendance")
 }
 
@@ -75,6 +93,8 @@ model FaceProfile {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  @@index([provider])
+  @@index([createdAt])
   @@map("face_profiles")
 }
 
