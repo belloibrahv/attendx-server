@@ -63,16 +63,37 @@ const attendanceLimiter = createRateLimit(60 * 1000, 50, 'Too many attendance su
 
 // Production-ready CORS configuration
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? [
-        'https://attendx.vercel.app', 
-        'https://attendx-web.vercel.app',
-        'https://attendx-web.netlify.app',
-        'https://attendx-web.onrender.com',
-        /^https:\/\/.*\.vercel\.app$/,
-        /^https:\/\/.*\.netlify\.app$/
-      ]
-    : true,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or Postman)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = process.env.NODE_ENV === 'production' 
+      ? [
+          'https://attendx.vercel.app', 
+          'https://attendx-web.vercel.app',
+          'https://attendx-web.netlify.app',
+          'https://attendx-web.onrender.com'
+        ]
+      : ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000'];
+    
+    // Check exact matches first
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // Check regex patterns for production
+    if (process.env.NODE_ENV === 'production') {
+      const vercelPattern = /^https:\/\/.*\.vercel\.app$/;
+      const netlifyPattern = /^https:\/\/.*\.netlify\.app$/;
+      
+      if (vercelPattern.test(origin) || netlifyPattern.test(origin)) {
+        return callback(null, true);
+      }
+    }
+    
+    console.log(`CORS: Blocked origin: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   optionsSuccessStatus: 200,
   maxAge: 86400 // 24 hours
