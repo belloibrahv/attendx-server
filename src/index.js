@@ -61,20 +61,9 @@ const authLimiter = createRateLimit(15 * 60 * 1000, 10, 'Too many authentication
 const qrLimiter = createRateLimit(60 * 1000, 100, 'Too many QR requests');
 const attendanceLimiter = createRateLimit(60 * 1000, 50, 'Too many attendance submissions');
 
-// Production-ready CORS configuration
+// Production-ready CORS configuration - temporarily allowing all origins for debugging
 const corsOptions = {
-  origin: [
-    'https://attendx.vercel.app', 
-    'https://attendx-web.vercel.app',
-    'https://attendx-web.netlify.app',
-    'https://attendx-web.onrender.com',
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:5173',
-    /^https:\/\/.*\.vercel\.app$/,
-    /^https:\/\/.*\.netlify\.app$/
-  ],
+  origin: true, // Allow all origins temporarily for debugging
   credentials: true,
   optionsSuccessStatus: 200,
   maxAge: 86400, // 24 hours
