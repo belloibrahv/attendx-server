@@ -66,6 +66,7 @@ const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? [
         'https://attendx.vercel.app', 
+        'https://attendx-web.vercel.app',
         'https://attendx-web.netlify.app',
         'https://attendx-web.onrender.com',
         /^https:\/\/.*\.vercel\.app$/,
